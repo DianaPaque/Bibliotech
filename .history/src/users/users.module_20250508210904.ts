@@ -4,10 +4,9 @@ import { UsersController } from './users.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from './schema/users.schema';
 import { AuthModule } from 'src/auth/auth.module';
-import { NotificationsModule } from 'src/notifications/notifications.module';
 
 @Module({
-  imports:[MongooseModule.forFeature([{name: User.name, schema: UserSchema}]),AuthModule,NotificationsModule],
+  imports:[MongooseModule.forFeature([{name: User.name, schema: UserSchema}]),AuthModule],
   controllers: [UsersController],
   providers: [UsersService],
 })
