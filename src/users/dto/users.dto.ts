@@ -5,7 +5,8 @@ import {
     MinLength,
     IsOptional,
     IsPhoneNumber,
-    IsEnum
+    IsEnum,
+    MaxLength
   } from 'class-validator';
 
 export enum UserRoles { 
@@ -62,4 +63,15 @@ export class CreateUserDto {
     phone_number: string;
 
 
+}
+
+export class VerifyLoginOrRegisterDto {
+    @IsEmail()
+    @IsNotEmpty()
+    email: string;
+
+    @IsNotEmpty()
+    @IsString()
+    @MaxLength(6)
+    verif_code: string;
 }

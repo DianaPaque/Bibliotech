@@ -10,18 +10,20 @@ export class EmailService {
 
     constructor(private configService: ConfigService){
         this.transporter = nodemailer.createTransport({
-            host: 'smtp.gmail.com',
-            port: 587,
+            host: this.configService.get<string>('EMAIL_HOST'),
+            port: this.configService.get<number>('EMAIL_PORT'),
             secure: false,
             auth: {
                 user: this.configService.get<string>('EMAIL_USER'),
                 pass: this.configService.get<string>('EMAIL_PASSWORD')
             },
         });
+        //console.log(this.configService.get<string>('EMAIL_USER'));
+        //console.log(this.configService.get<string>('EMAIL_PASSWORD'));
     }
 
 
-    async sendVerifCodeEmail(email: string, name: string, code: string): Promise<void> {
+    async sendVerifCodeEmail(email: string, code: string): Promise<void> {
         const mailOptions = {
             from: `"${this.appName}" <miguel.suarezo@autonoma.edu.co>`,
             to: email,

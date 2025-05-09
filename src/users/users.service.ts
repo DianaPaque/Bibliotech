@@ -1,15 +1,16 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException, OnModuleInit, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel, Schema } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User as SchemaUser, User, UserDocument} from './schema/users.schema';
-import { CreateUserDto, SanitizedUser } from './dto/users.dto';
+import { CreateUserDto, SanitizedUser, VerifyLoginOrRegisterDto } from './dto/users.dto';
 import { NotificationsService } from 'src/notifications/notifications.service';
 import { AuthService } from 'src/auth/auth.service';
+import { NotFoundError } from 'rxjs';
 @Injectable()
-export class UsersService {
-    constructor(@InjectModel(SchemaUser.name) private userModel: Model<UserDocument>, private notifier: NotificationsService, private auth: AuthService){}
-
+export class UsersService{
+    constructor(@InjectModel(SchemaUser.name) private userModel: Model<UserDocument>, private notifier: NotificationsService, private auth: AuthService, private configService: ConfigService){}
+   
     async createUser(dto: CreateUserDto): Promise<SanitizedUser> {
         const existingUser = await this.userModel.findOne({email: dto.email}).exec();
         if(existingUser) throw new ConflictException('Este correo ya está registrado.');
@@ -23,11 +24,24 @@ export class UsersService {
             first_last_name: dto.first_last_name,
             second_last_name: dto.second_last_name,
             email: dto.email,
+            phone_number: dto.phone_number,
             pwd_hash: hashed_pwd,
             verificationCode: verif_code,
         });
+        await this.notifier.sendEmailVerifCode(dto.email,verif_code);
 
-        const sanitizedUser = await newUser.save();
+        const createdUser = await newUser.save();
+        return new SanitizedUser(createdUser);
+    }
+
+    async verifyRegister(dto: VerifyLoginOrRegisterDto): Promise<string> {
+        const existingUser = await this.userModel.findOne({email: dto.email}).exec();
+        if(!existingUser) throw new NotFoundException('El usuario que estás intentando verificar no existe.');
+        if(existingUser.isVerified) throw new ConflictException('Este usuario ya está verificado.');
+        if(!this.auth.compareCodes(dto.verif_code,existingUser.verificationCode as string)) throw new UnauthorizedException('Los código de verificación no coinciden.');
+
+        const isverifiedex = await this.userModel.updateOne({email: dto.email}, {isVerified: true});
+        return 'isVerified = true';
     }
 
 }

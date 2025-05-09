@@ -16,6 +16,11 @@ export class AuthService {
     async comparePwd(hashed_pwd: string, pwd: string): Promise<boolean> {
         return await bcrypt.compare(pwd,hashed_pwd);
     }
+
+    compareCodes(req_code: string, real_code: string | null): boolean {
+        if(req_code !== real_code) return false;
+        return true;
+    }
     
 
 
