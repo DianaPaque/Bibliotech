@@ -6,16 +6,15 @@ import {
     IsOptional,
     IsPhoneNumber,
     IsEnum,
-    MaxLength
-  } from 'class-validator';
+    MaxLength,
+    isEmail
+} from 'class-validator';
 
 export enum UserRoles { 
     Customer = 'Customer',
     Admin = 'Admin',
     SuperAdmin = 'SuperAdmin'
 }
-
-
 export class SanitizedUser {
     readonly _id: string;
     readonly first_name: string;
@@ -24,15 +23,14 @@ export class SanitizedUser {
     readonly second_last_name: string;
     readonly email: string;
     constructor(user: any) {
-       this._id = user._id;
-       this.first_name = user.first_name;
-       this.second_name = user.second_name;
-       this.first_last_name = user.first_last_name;
-       this.second_last_name = user.second_last_name;
-       this.email = user.email;
+        this._id = user._id;
+        this.first_name = user.first_name;
+        this.second_name = user.second_name;
+        this.first_last_name = user.first_last_name;
+        this.second_last_name = user.second_last_name;
+        this.email = user.email;
     }
 }
-
 export class CreateUserDto {
     @IsNotEmpty()
     @IsString()
@@ -61,10 +59,7 @@ export class CreateUserDto {
     @IsPhoneNumber()
     @IsNotEmpty()
     phone_number: string;
-
-
 }
-
 export class VerifyLoginOrRegisterDto {
     @IsEmail()
     @IsNotEmpty()
@@ -74,4 +69,13 @@ export class VerifyLoginOrRegisterDto {
     @IsString()
     @MaxLength(6)
     verif_code: string;
+}
+export class LoginDto {
+    @IsEmail()
+    @IsNotEmpty()
+    email: string;
+
+    @IsString()
+    @IsNotEmpty()
+    password: string;
 }

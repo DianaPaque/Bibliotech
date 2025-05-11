@@ -3,14 +3,14 @@ import { ConfigService } from '@nestjs/config';
 import { InjectModel, Schema } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User as SchemaUser, User, UserDocument} from './schema/users.schema';
-import { CreateUserDto, SanitizedUser, VerifyLoginOrRegisterDto } from './dto/users.dto';
+import { CreateUserDto, SanitizedUser, VerifyLoginOrRegisterDto, LoginDto } from './dto/users.dto';
 import { NotificationsService } from 'src/notifications/notifications.service';
 import { AuthService } from 'src/auth/auth.service';
 import { NotFoundError } from 'rxjs';
 @Injectable()
 export class UsersService{
     constructor(@InjectModel(SchemaUser.name) private userModel: Model<UserDocument>, private notifier: NotificationsService, private auth: AuthService, private configService: ConfigService){}
-   
+
     async createUser(dto: CreateUserDto): Promise<SanitizedUser> {
         const existingUser = await this.userModel.findOne({email: dto.email}).exec();
         if(existingUser) throw new ConflictException('Este correo ya está registrado.');
@@ -44,4 +44,16 @@ export class UsersService{
         return 'isVerified = true';
     }
 
+    async login(dto: LoginDto): Promise<{token: string}> {
+        const user = await this.userModel.findOne({ email: dto.email }).exec();
+
+        if (!user) throw new NotFoundException('Usuario no encontrado');
+        if (!user.isVerified) throw new UnauthorizedException('Usuario no verificado');
+
+        const passwordMatch = await this.auth.comparePwd(dto.password, user.pwd_hash);
+        if (!passwordMatch) throw new UnauthorizedException('Contraseña incorrecta');
+
+        const token = await this.auth.generateJwt({ sub: user._id, email: user.email, role: 'Customer' });
+        return { token };
+    }
 }
