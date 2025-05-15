@@ -2,11 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { LibraryService } from 'src/library/library.service';
+import { MembershipService } from 'src/membership/membership.service';
 @Injectable()
 export class AuthService {
     constructor(
         private configService: ConfigService,
-        private jwtService: JwtService
+        private jwtService: JwtService,
+        private lib: LibraryService,
+        private memb: MembershipService
     ){}
 
     generateVerifCode(): string {
@@ -29,4 +33,11 @@ export class AuthService {
     generateJwt(payload: any): string {
         return this.jwtService.sign(payload);
     }    
+
+    async canAccessBook(user_id: string, book_id: string): Promise<boolean> {
+        const libraryId = await this.lib.getLibraryIdByBookId(book_id);
+        return await this.memb.hasMembership(user_id, libraryId.toString());
+    }
+
+
 }

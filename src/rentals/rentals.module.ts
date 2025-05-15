@@ -9,6 +9,6 @@ import { LibraryModule } from 'src/library/library.module';
 @Module({
   imports: [MongooseModule.forFeature([{name: Rental.name, schema: RentalSchema}]), LibraryModule],
   controllers: [RentalsController],
-  providers: [RentalService, LibraryService],
+  providers: [RentalService],
 })
 export class RentalsModule {}

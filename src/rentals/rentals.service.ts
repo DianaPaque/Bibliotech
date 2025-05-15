@@ -5,7 +5,6 @@ import { Rental, RentalDocument } from './schema/rental.schema';
 import { CreateRentalDto, UpdateRentalDto } from './dto/rental.dto';
 import { LibraryService } from 'src/library/library.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class RentalService {
@@ -78,7 +77,6 @@ export class RentalService {
         rental.price_with_interest = rental.price_no_interest + rental.accumulated_interest;
 
         await rental.save();
-        this.logger.log(`Rental ${rental._id}: +${newDaysLate} late days, rate ${interestRate}, interest +${additionalInterest.toFixed(2)}`);
       }
     }
   }

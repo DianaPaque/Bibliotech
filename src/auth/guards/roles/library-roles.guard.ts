@@ -7,15 +7,15 @@ import {
 import { Reflector } from '@nestjs/core';
 import { LIBRARY_ROLES_KEY } from './library-roles.decorator';
 import { LibraryRole } from './library-roles.enum';
-import { Model } from 'mongoose';
-import { InjectModel } from '@nestjs/mongoose';
-import { UserMembership } from 'src/membership/schema/user-membership.schema';
+import { LibraryService } from 'src/library/library.service';
+import { MembershipService } from 'src/membership/membership.service';
 
 @Injectable()
 export class LibraryRolesGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
-    @InjectModel('user_memberships') private membershipModel: Model<UserMembership>
+    private readonly libService: LibraryService,
+    private readonly membService: MembershipService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -29,18 +29,15 @@ export class LibraryRolesGuard implements CanActivate {
     const user = req.user;
     const libraryId = req.params.libraryId || req.body.libraryId;
 
-    if (!user || !libraryId) throw new ForbiddenException('Missing user or library context');
+    if (!user || !libraryId)
+      throw new ForbiddenException('Missing user or library context');
 
-    const membership = await this.membershipModel.findOne({
-      user_id: user.user_id,
-      library_id: libraryId,
-    });
+    const ownerId = await this.libService.getOwnerIdByLibraryId(libraryId);
+    if (ownerId === user.user_id) return true;
 
-    if (!membership) throw new ForbiddenException('User is not a member of this library');
-
-    if (!requiredRoles.includes(membership.role as LibraryRole)) {
+    const isAllowed = await this.membService.hasRole(user.user_id, libraryId, requiredRoles);
+    if (!isAllowed)
       throw new ForbiddenException(`User lacks required role: ${requiredRoles.join(', ')}`);
-    }
 
     return true;
   }

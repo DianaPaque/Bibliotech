@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsNumber, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsOptional, IsBoolean, IsInt } from 'class-validator';
 
 export class CreateLibraryDto {
   @IsString()
@@ -64,12 +64,8 @@ export class UpdateBookDto {
   isbn?: string;
 
   @IsOptional()
-  @IsNumber()
+  @IsInt()
   existing_units?: number;
-
-  @IsOptional()
-  @IsBoolean()
-  isAvailable?: boolean;
 
   @IsOptional()
   @IsNumber()
