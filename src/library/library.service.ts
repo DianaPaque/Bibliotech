@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Library, LibraryDocument } from './schema/library.schema';
 import { CreateBookDto, CreateLibraryDto, UpdateLibraryDto, UpdateBookDto } from './dto/library.dto';
+import { throws } from 'assert';
 
 
 @Injectable()
@@ -71,18 +72,26 @@ export class LibraryService {
     return book;
   }
 
-  async updateBook(libraryId: string, bookId: string, dto: UpdateBookDto) {
-    const lib = await this.libraryModel.findById(libraryId);
-    if (!lib) throw new NotFoundException('Library not found');
-
-    const book = lib.Books.find(b => b.book_id.toString() === bookId);
-    if (!book) throw new NotFoundException('Book not found');
-
-    Object.assign(book, dto);
-    await lib.save();
-    return book;
+  async getAvailableUnits(bookId: string): Promise<number> {
+    const lib = await this.libraryModel.findOne(
+      {'Books.book_id': bookId},
+      { 'Books.$': 1}
+    );
+    if(!lib || !lib.Books || lib.Books.length === 0) throw new NotFoundException('Book not found');
+    return lib.Books[0].existing_units;
   }
 
+
+  async updateAvailableUnits(bookId: string, increment: number): Promise<number> {
+    const book = await this.libraryModel.findOneAndUpdate(
+      {'Books.book_id': bookId},
+      {$set: {'Books.$.existing_units':increment}},
+      {new: true}
+    );
+    if(!book) throw new NotFoundException('Book not found');
+    return book.Books[0].existing_units;
+  }
+  
   async deleteBook(libraryId: string, bookId: string): Promise<void> {
     const lib = await this.libraryModel.findById(libraryId);
     if (!lib) throw new NotFoundException('Library not found');
@@ -95,4 +104,19 @@ export class LibraryService {
 
     await lib.save();
   }
+
+  
+  async getLibraryInterestByBookId(bookId: string): Promise<number> {
+    const book = await this.libraryModel.findOne(
+      { 'Books.book_id': bookId },
+      { 'Books.$': 1, return_failure_interest: 1 }
+    ).lean();
+  
+    if (!book) {
+      throw new Error(`Book with ID ${bookId} not found in any library`);
+    }
+  
+    return book.return_failure_interest;
+  }
+  
 }

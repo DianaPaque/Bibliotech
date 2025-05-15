@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { LIBRARY_ROLES_KEY } from '../library-roles.decorator';
+import { LIBRARY_ROLES_KEY } from './library-roles.decorator';
 import { LibraryRole } from './library-roles.enum';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';

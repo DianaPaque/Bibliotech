@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import { LibraryRole } from 'src/guards/roles/library-roles.enum';
+import { LibraryRole } from 'src/auth/guards/roles/library-roles.enum';
 
 @Schema({ timestamps: true })
 export class UserMembership {

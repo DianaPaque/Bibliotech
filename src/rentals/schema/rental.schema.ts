@@ -11,9 +11,15 @@ export class Rental {
 
   @Prop({ type: Date, default: Date.now })
   start_date: Date;
-
+  
   @Prop({ type: Date, required: true })
   devolution_date: Date;
+
+  @Prop({type: Boolean, default: false})
+  isTurnedIn: Boolean;
+
+  @Prop({type: Date})
+  actual_devolution_date: Date;
 
   @Prop({ type: Number, default: 0 })
   lateBy: number;
