@@ -8,5 +8,6 @@ import { Library, LibrarySchema } from './schema/library.schema';
   imports: [MongooseModule.forFeature([{name: Library.name, schema: LibrarySchema}])],
   controllers: [LibraryController],
   providers: [LibraryService],
+  exports: [LibraryService, MongooseModule],
 })
 export class LibraryModule {}

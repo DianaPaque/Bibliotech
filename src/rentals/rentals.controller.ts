@@ -1,7 +1,7 @@
 import { Controller } from '@nestjs/common';
-import { RentalsService } from './rentals.service';
+import { RentalService } from './rentals.service';
 
 @Controller('rentals')
 export class RentalsController {
-  constructor(private readonly rentalsService: RentalsService) {}
+  constructor(private readonly rentalsService: RentalService) {}
 }
