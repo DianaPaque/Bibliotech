@@ -32,4 +32,14 @@ export class EmailService {
         };
         await this.transporter.sendMail(mailOptions);
     }
+
+    async sendGenericEmail(email: string, subject: string, text: string): Promise<void> {
+        const mailOptions = {
+            from: `"${this.appName}" <miguel.suarezo@autonoma.edu.co>`,
+            to: email,
+            subject: subject,
+            text: text
+        };
+        await this.transporter.sendMail(mailOptions);
+    }
 }

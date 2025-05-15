@@ -7,6 +7,9 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from './auth/auth.module';
+import { LibraryModule } from './library/library.module';
+import { RentalsModule } from './rentals/rentals.module';
+import { MembershipModule } from './membership/membership.module';
 
 @Module({
   imports: [UsersModule, AuthModule, DatabaseModule, NotificationsModule, 
@@ -18,6 +21,9 @@ import { AuthModule } from './auth/auth.module';
         uri: configService.get('MONGODB_URI'),
       }),
     }),
+    LibraryModule,
+    RentalsModule,
+    MembershipModule,
   ],
   controllers: [AppController],
   providers: [AppService],
