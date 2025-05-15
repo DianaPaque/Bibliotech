@@ -1,4 +1,4 @@
-import { forwardRef, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Book, Library, LibraryDocument } from './schema/library.schema';
@@ -31,9 +31,9 @@ export class LibraryService {
     return library;
   }
 
-  async updateLibrary(libraryId: string, dto: UpdateLibraryDto): Promise<Library> {
+  async updateLibrary(dto: UpdateLibraryDto): Promise<Library> {
     const updated = await this.libraryModel.findByIdAndUpdate(
-      libraryId,
+      dto.libraryId,
       dto,
       { new: true }
     );
@@ -48,8 +48,8 @@ export class LibraryService {
     await this.libraryModel.findByIdAndDelete(libraryId);
   }
 
-  async addBook(libraryId: string, dto: CreateBookDto) {
-    const lib = await this.libraryModel.findById(libraryId);
+  async addBook(dto: CreateBookDto): Promise<Book> {
+    const lib = await this.libraryModel.findById(dto.libraryId);
     if (!lib) throw new NotFoundException('Library not found');
 
     const newBook = {
@@ -89,7 +89,7 @@ export class LibraryService {
 
   async updateAvailableUnits(bookId: string, increment: number): Promise<number> {
     const book = await this.libraryModel.findOneAndUpdate(
-      {'Books.book_id': bookId},
+      {'Books.book_id': new Types.ObjectId(bookId)},
       {$set: {'Books.$.existing_units': increment}},
       {new: true}
     );
@@ -101,11 +101,11 @@ export class LibraryService {
   async updateAvailableUnitsManually(bookId: string, increment: number, requester_id: string): Promise<number> {
     if(!await this.auth.canAccessBook(requester_id,bookId)) throw new UnauthorizedException('No estás autorizado para archivar este libro');
     const book = await this.libraryModel.findOneAndUpdate(
-      {'Books.book_id': bookId},
+      {'Books.book_id': new Types.ObjectId(bookId)},
       {$set: {'Books.$.existing_units': increment}},
       {new: true}
     );
-    if(!book) throw new NotFoundException('Book not found');
+    if(!book) throw new NotFoundException('Libro no encontrado');
     if(book.Books[0].existing_units === 0) await this.archiveBook(bookId);
     return book.Books[0].existing_units;
   }
@@ -136,7 +136,7 @@ export class LibraryService {
   async archiveBookManually(bookId: string, requester_id: string): Promise<void> {
     if(!await this.auth.canAccessBook(requester_id,bookId)) throw new UnauthorizedException('No estás autorizado para archivar este libro');
     const book = await this.libraryModel.findOneAndUpdate(
-      {'Books.book_id': bookId},
+      {'Books.book_id': new Types.ObjectId(bookId)},
       {$set: {'Books.$.isAvailable': false}},
       {new: true}
     );
@@ -158,7 +158,7 @@ export class LibraryService {
 
   async getLibraryIdByBookId(book_id: string): Promise<string> {
     const lib = await this.libraryModel.findOne(
-      { 'Books.book_id': book_id },
+      { 'Books.book_id': new Types.ObjectId(book_id) },
       { _id: 1 }
     ).lean();
 
@@ -172,18 +172,15 @@ export class LibraryService {
     return lib.owner_id.toString();
   }
 
-  async updateBook(bookId: string, dto: UpdateBookDto, requester_id: string): Promise<Book> {
-    // Check access first
-    const canEdit = await this.auth.canAccessBook(requester_id, bookId);
-    if (!canEdit) throw new UnauthorizedException('No estás autorizado para modificar este libro');
+  async updateBook(dto: UpdateBookDto, requester_id: string): Promise<Book> {
+    if (!await this.auth.canAccessBook(requester_id, dto.bookId)) throw new UnauthorizedException('No estás autorizado para modificar este libro');
 
-    const lib = await this.libraryModel.findOne({ 'Books.book_id': bookId });
+    const lib = await this.libraryModel.findOne({ 'Books.book_id': new Types.ObjectId(dto.bookId) });
     if (!lib) throw new NotFoundException('Biblioteca no encontrada');
 
-    const book = lib.Books.find(b => b.book_id.toString() === bookId);
+    const book = lib.Books.find(b => b.book_id.toString() === dto.bookId);
     if (!book) throw new NotFoundException('Libro no encontrado');
 
-    // Apply updates (excluding isAvailable and book_id)
     if (dto.book_name !== undefined) book.book_name = dto.book_name;
     if (dto.book_description !== undefined) book.book_description = dto.book_description;
     if (dto.isbn !== undefined) book.isbn = dto.isbn;
