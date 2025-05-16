@@ -10,11 +10,11 @@ import { MembershipModule } from 'src/membership/membership.module';
 @Module({
   imports: [
     MongooseModule.forFeature([{name: Library.name, schema: LibrarySchema}]), 
-    forwardRef(() => AuthModule),
-    MembershipModule
+    forwardRef( () => AuthModule ),
+    forwardRef( ()=> MembershipModule )
   ],
   controllers: [LibraryController],
   providers: [LibraryService],
-  exports: [LibraryService, MongooseModule],
+  exports: [LibraryService],
 })
 export class LibraryModule {}

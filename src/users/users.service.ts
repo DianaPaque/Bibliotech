@@ -6,7 +6,6 @@ import { User as SchemaUser, User, UserDocument} from './schema/users.schema';
 import { CreateUserDto, SanitizedUser, VerifyLoginOrRegisterDto, LoginDto } from './dto/users.dto';
 import { NotificationsService } from 'src/notifications/notifications.service';
 import { AuthService } from 'src/auth/auth.service';
-import { NotFoundError } from 'rxjs';
 @Injectable()
 export class UsersService{
     constructor(@InjectModel(SchemaUser.name) private userModel: Model<UserDocument>, private notifier: NotificationsService, private auth: AuthService, private configService: ConfigService){}
@@ -55,5 +54,11 @@ export class UsersService{
 
         const token = await this.auth.generateJwt({ sub: user._id, email: user.email, role: 'Customer' });
         return { token };
+    }
+
+    async userExists(user_id: string): Promise<boolean> {
+        const exists = await this.userModel.findById(user_id);
+        if(!exists) return false;
+        return true;
     }
 }

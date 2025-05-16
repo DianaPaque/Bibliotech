@@ -189,8 +189,12 @@ export class LibraryService {
 
     await lib.save();
     return book;
-}
+  }
 
-
+  async libraryExists(libraryId: string): Promise<boolean> {
+    const exists = await this.libraryModel.findById(libraryId);
+    if(!exists) return false;
+    return true;
+  }
 
 }

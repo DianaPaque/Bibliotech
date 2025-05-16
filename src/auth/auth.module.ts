@@ -14,7 +14,7 @@ import { JwtStrategy } from './guards/jwt/jwt.strategy';
       signOptions: { expiresIn: '1d' },
     }),
 
-    MembershipModule,
+    forwardRef( () => MembershipModule ),
     forwardRef(() => LibraryModule)
   ],
   controllers: [AuthController],
