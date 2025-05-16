@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, ForbiddenException, Injectable,
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types} from 'mongoose';
 import { Rental, RentalDocument } from './schema/rental.schema';
-import { CreateRentalDto, UpdateRentalDto } from './dto/rental.dto';
+import { AcceptTurnInDto, CreateRentalDto, RequestTurnInDto, UpdateRentalDto } from './dto/rental.dto';
 import { LibraryService } from 'src/library/library.service';
 import { UsersService } from 'src/users/users.service';
   
@@ -34,28 +34,35 @@ export class RentalService {
     return this.rentalModel.find().lean();
   }
 
-  async turnInRental(customer_id: string, book_id: string): Promise<Rental> {
-    if(!customer_id || !book_id) throw new BadRequestException('Faltan parámetros');
-    const rental = await this.rentalModel.findOne({customer_id: customer_id, bookId: book_id});
+  async requestTurnIn(requester_id: string, dto: RequestTurnInDto): Promise<void> {
+    if(!requester_id) throw new BadRequestException('Faltan parámetros');
+    const rental = await this.rentalModel.findOne({customer_id: requester_id, bookId: dto.bookId});
+    if(!rental) throw new NotFoundException('Renta no encontrada');
+    rental.turnInRequested = true;
+    await rental.save();
+  }
+
+  async acceptTurnIn(dto: AcceptTurnInDto): Promise<Rental> {
+    const rental = await this.rentalModel.findOne({customer_id: dto.customer_id, bookId: dto.bookId});
     if(!rental) throw new NotFoundException('Renta no encontrada');
     if(rental.isTurnedIn) throw new ConflictException('Esta renta ya fue entregada');
     const today = new Date();
     if(this.isLate(rental.devolution_date,today)){ 
-      const curr_strikes = await this.usr.getUserStrikes(customer_id);
-      await this.usr.setUserStrikes(customer_id,(curr_strikes + 1));
+      const curr_strikes = await this.usr.getUserStrikes(dto.customer_id);
+      await this.usr.setUserStrikes(dto.customer_id,(curr_strikes + 1));
     }
 
     let flat_fee: number;
-    const specialCost = await this.libService.getSpecialCostByBookId(book_id);
+    const specialCost = await this.libService.getSpecialCostByBookId(dto.bookId);
     if(specialCost !== 0) {
       flat_fee = specialCost;
     }
     else{
-      flat_fee = await this.libService.getLibraryFlatFeeByBookId(book_id);
+      flat_fee = await this.libService.getLibraryFlatFeeByBookId(dto.bookId);
     }
     
-    if(await this.usr.getUserBalance(customer_id) <= 0) throw new ForbiddenException('No tiene balance suficiente para pagar');
-    const final_price = this.calculateLateFees(rental.devolution_date, today, await this.libService.getLibraryInterestByBookId(book_id), flat_fee);
+    if(await this.usr.getUserBalance(dto.customer_id) <= 0) throw new ForbiddenException('No tiene balance suficiente para pagar');
+    const final_price = this.calculateLateFees(rental.devolution_date, today, await this.libService.getLibraryInterestByBookId(dto.bookId), flat_fee);
     rental.lateBy = this.lateBy(today, rental.devolution_date);
     rental.actual_devolution_date = today;
     rental.price_no_interest = flat_fee;
@@ -63,7 +70,7 @@ export class RentalService {
     rental.final_price = final_price;
     rental.accumulated_interest = (final_price - flat_fee); 
     rental.isTurnedIn = true;
-    await this.usr.setUserBalance(customer_id, (await this.usr.getUserBalance(customer_id) - final_price));
+    await this.usr.setUserBalance(dto.customer_id, (await this.usr.getUserBalance(dto.customer_id) - final_price));
     return await rental.save();
   }
 

@@ -1,8 +1,11 @@
 import { Body, Controller, Post, Put, Req, UseGuards } from '@nestjs/common';
 import { RentalService } from './rentals.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt/jwt-auth.guard';
-import { CreateRentalDto } from './dto/rental.dto';
+import { AcceptTurnInDto, CreateRentalDto, RequestTurnInDto } from './dto/rental.dto';
 import { Rental } from './schema/rental.schema';
+import { LibraryRoles } from 'src/auth/guards/roles/library-roles.decorator';
+import { LibraryRole } from 'src/auth/guards/roles/library-roles.enum';
+import { LibraryRolesGuard } from 'src/auth/guards/roles/library-roles.guard';
 
 @Controller('rentals')
 export class RentalsController {
@@ -15,9 +18,16 @@ export class RentalsController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Put('turnInRental')
-  async turnInRental(@Body() body: any, @Req() req): Promise<Rental> {
-    return await this.rentalsService.turnInRental(req.user.user_id, body.book_id);
+  @Put('requestTurnIn')
+  async requestTurnIn(@Req() req, dto: RequestTurnInDto): Promise<void> {
+    await this.rentalsService.requestTurnIn(req.user.user_id, dto);
+  }
+
+  @UseGuards(JwtAuthGuard, LibraryRolesGuard)
+  @LibraryRoles(LibraryRole.Admin, LibraryRole.SuperAdmin)
+  @Put('acceptTurnIn')
+  async acceptTurnIn(@Body() dto: AcceptTurnInDto): Promise<Rental> {
+    return await this.rentalsService.acceptTurnIn(dto);
   }
 
   @UseGuards(JwtAuthGuard)

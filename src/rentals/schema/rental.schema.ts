@@ -18,6 +18,9 @@ export class Rental {
   @Prop({ type: Number})
   amount: number;
 
+  @Prop({ type: Boolean, default: false})
+  turnInRequested: boolean;
+  
   @Prop({type: Boolean, default: false})
   isTurnedIn: Boolean;
 

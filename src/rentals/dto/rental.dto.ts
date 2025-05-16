@@ -14,6 +14,26 @@ export class CreateRentalDto {
   amount: number;
 }
 
+export class AcceptTurnInDto {
+  @IsNotEmpty()
+  @IsMongoId()
+  customer_id: string;
+
+  @IsNotEmpty()
+  @IsMongoId()
+  bookId: string;
+
+  @IsNotEmpty()
+  @IsMongoId()
+  library_id: string;
+}
+
+export class RequestTurnInDto {
+  @IsNotEmpty()
+  @IsMongoId()
+  bookId: string;
+}
+
 export class UpdateRentalDto {
   @IsOptional()
   @IsMongoId()

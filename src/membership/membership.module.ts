@@ -5,7 +5,6 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { UserMembership, UserMembershipSchema } from './schema/user-membership.schema';
 import { LibraryModule } from 'src/library/library.module';
 import { UsersModule } from 'src/users/users.module';
-console.log('Users Module: ' + UsersModule)
 @Module({
   imports:[
     MongooseModule.forFeature([{name: UserMembership.name, schema: UserMembershipSchema }]), 
