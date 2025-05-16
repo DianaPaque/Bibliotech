@@ -9,10 +9,11 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 @Injectable()
 export class RentalService {
   constructor(
-    @InjectModel(Rental.name) private rentalModel: Model<RentalDocument>,
-    private readonly libService: LibraryService,
+    //@InjectModel(Rental.name) private rentalModel: Model<RentalDocument>,
+    //private readonly libService: LibraryService,
+    //private readonly logger: Logger
   ) {}
-
+/*
   async createRental(dto: CreateRentalDto): Promise<Rental> {
     if(await this.libService.getAvailableUnits(dto.bookId) === 0) throw new BadRequestException(`There's no available unit for this book.`);
     const rental = new this.rentalModel({
@@ -80,5 +81,5 @@ export class RentalService {
     }
   }
 
-
+*/
 }

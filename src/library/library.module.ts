@@ -15,6 +15,6 @@ import { MembershipModule } from 'src/membership/membership.module';
   ],
   controllers: [LibraryController],
   providers: [LibraryService],
-  exports: [LibraryService]
+  exports: [LibraryService, MongooseModule],
 })
 export class LibraryModule {}

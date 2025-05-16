@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Req, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Get, Put, Delete, Param } from '@nestjs/common';
 import { LibraryService } from './library.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt/jwt-auth.guard';
 import { CreateBookDto, CreateLibraryDto, UpdateBookDto, UpdateLibraryDto } from './dto/library.dto';
@@ -12,15 +12,16 @@ import { UserRoles } from 'src/users/dto/users.dto';
 export class LibraryController {
   constructor(private readonly libraryService: LibraryService) {}
 
-  @UseGuards(JwtAuthGuard)
+  //Bibliotecas
+
   @Post('createLibrary')
   async createLibrary(@Body() dto: CreateLibraryDto, @Req() req): Promise<Library> {
     return await this.libraryService.createLibrary(dto, req.user.user_id);
   }
 
   @Get('getAllLibraries')
-  async getAllLibraries(): Promise<Library[]> {
-    return await this.libraryService.getAllLibraries();
+  getAllLibraries() {
+    return this.libraryService.getAllLibraries();
   }
 
   @UseGuards(JwtAuthGuard, LibraryRolesGuard)
@@ -51,11 +52,29 @@ export class LibraryController {
     return await this.libraryService.archiveBookManually(book_id, req.user.user_id);
   }
 
-  @UseGuards(JwtAuthGuard, LibraryRolesGuard)
-  @LibraryRoles(LibraryRole.SuperAdmin, LibraryRole.Admin)
-  @Put('updateAvailableUnits/:book_id/:increment')
-  async updateAvailableUnits(@Param('book_id') book_id: string, @Param('increment') increment: number, @Req() req): Promise<number> {
-    return await this.libraryService.updateAvailableUnitsManually(book_id, increment, req.user.user_id);
+  @Delete('deleteBook/:libraryId/:bookId')
+  deleteBook(@Param('libraryId') libraryId: string, @Param('bookId') bookId: string) {
+    return this.libraryService.deleteBook(libraryId, bookId);
+  }
+
+  @Get('bookUnits/:bookId')
+  getAvailableUnits(@Param('bookId') bookId: string) {
+    return this.libraryService.getAvailableUnits(bookId);
+  }
+
+  @Put('updateUnits/:bookId/:increment')
+  updateAvailableUnits(@Param('bookId') bookId: string,@Param('increment') increment: string) {
+    return this.libraryService.updateAvailableUnits(bookId, Number(increment));
+  }
+
+  @Get('interestPercentage/:bookId')
+  getLibraryInterestByBookId(@Param('bookId') bookId: string) {
+    return this.libraryService.getLibraryInterestByBookId(bookId);
+  }
+
+  @Put('updateBook/:libraryId/:bookId')
+  updateBook(@Param('libraryId') libraryId: string, @Param('bookId') bookId: string, @Body() dto: UpdateBookDto) {
+  return this.libraryService.updateBook(libraryId, bookId, dto);
   }
 
   @UseGuards(JwtAuthGuard, LibraryRolesGuard)
