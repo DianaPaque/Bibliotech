@@ -5,20 +5,19 @@ import { AuthController } from './auth.controller';
 import { MembershipModule } from 'src/membership/membership.module';
 import { LibraryModule } from 'src/library/library.module';
 import { LibraryRolesGuard } from './guards/roles/library-roles.guard';
-import { JwtStrategy } from './guards/jwt/jwt.strategy';
 
 @Module({
   imports: [
     JwtModule.register({
-      secret: 'secret',
-      //signOptions: { expiresIn: '1d' }, Para que nunca expire por ahora no lo cambies porfa
+      secret: process.env.JWT_SECRET || 'default_secret',
+      signOptions: { expiresIn: '1d' },
     }),
 
     MembershipModule,
     forwardRef(() => LibraryModule)
   ],
   controllers: [AuthController],
-  providers: [AuthService, LibraryRolesGuard, JwtStrategy],
+  providers: [AuthService, LibraryRolesGuard],
   exports:[AuthService]
 })
 export class AuthModule {}

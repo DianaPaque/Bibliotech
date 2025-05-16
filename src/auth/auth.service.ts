@@ -36,13 +36,8 @@ export class AuthService {
 
     async canAccessBook(user_id: string, book_id: string): Promise<boolean> {
         const libraryId = await this.lib.getLibraryIdByBookId(book_id);
-
-        const ownerId = await this.lib.getOwnerIdByLibraryId(libraryId);
-        if (ownerId === user_id) return true;
-
-        return await this.memb.hasMembership(user_id, libraryId);
+        return await this.memb.hasMembership(user_id, libraryId.toString());
     }
-
 
 
 }
