@@ -1,75 +1,68 @@
-import { Controller, Post, Body, Get, Put, Delete, Param } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Req, UseGuards } from '@nestjs/common';
 import { LibraryService } from './library.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt/jwt-auth.guard';
-import { CreateLibraryDto, UpdateLibraryDto } from './dto/library.dto';
-import { Library } from './schema/library.schema';
+import { CreateBookDto, CreateLibraryDto, UpdateBookDto, UpdateLibraryDto } from './dto/library.dto';
+import { Book, Library } from './schema/library.schema';
 import { LibraryRolesGuard } from 'src/auth/guards/roles/library-roles.guard';
 import { LibraryRoles } from 'src/auth/guards/roles/library-roles.decorator';
 import { LibraryRole } from 'src/auth/guards/roles/library-roles.enum';
-import { UserRoles } from 'src/users/dto/users.dto';
 
-@Controller('library')
+@Controller('library')  
 export class LibraryController {
   constructor(private readonly libraryService: LibraryService) {}
 
-  //Bibliotecas
-
+  @UseGuards(JwtAuthGuard)
   @Post('createLibrary')
-  async createLibrary(@Body() dto: CreateLibraryDto, requester_id: string): Promise<Library> {
-    return await this.libraryService.createLibrary(dto, requester_id);
+  async createLibrary(@Body() dto: CreateLibraryDto, @Req() req): Promise<Library> {
+    return await this.libraryService.createLibrary(dto, req.user.user_id);
   }
 
   @Get('getAllLibraries')
-  getAllLibraries() {
-    return this.libraryService.getAllLibraries();
+  async getAllLibraries(): Promise<Library[]> {
+    return await this.libraryService.getAllLibraries();
   }
 
   @UseGuards(JwtAuthGuard, LibraryRolesGuard)
   @LibraryRoles(LibraryRole.SuperAdmin)
-  @Post('updateLibrary/:lib_id')
-  async updateLibrary(@Body() dto: UpdateLibraryDto, @Param('lib_id') library_id: string): Promise<Library> {
-    return await this.libraryService.updateLibrary(library_id, dto);
+  @Post('updateLibrary')
+  async updateLibrary(@Body() dto: UpdateLibraryDto): Promise<Library> {
+    return await this.libraryService.updateLibrary(dto);
   }
 
 
   @UseGuards(JwtAuthGuard)
-  @Delete('deleteLibrary/:library_id')
-  async deleteLibrary(@Param('library_id') lib_id: string, @Req() req): Promise<void> {
-    return await this.libraryService.deleteLibrary(lib_id, req.user.user_id);
+  @Delete('deleteLibrary/:libraryId')
+  async deleteLibrary(@Param('libraryId') libraryId: string, @Req() req): Promise<void> {
+    return await this.libraryService.deleteLibrary(libraryId, req.user.user_id);
   }
 
   @UseGuards(JwtAuthGuard, LibraryRolesGuard)
   @LibraryRoles(LibraryRole.SuperAdmin, LibraryRole.Admin)
-  @Put('archiveBook/:book_id')
+  @Post('createBook')
+  async createBook(@Body() dto: CreateBookDto): Promise<Book> {
+    return await this.libraryService.addBook(dto);
+  }
+
+  @UseGuards(JwtAuthGuard, LibraryRolesGuard)
+  @LibraryRoles(LibraryRole.SuperAdmin, LibraryRole.Admin)
+  @Put('archiveBook/:book_id/:libraryId')
   async archiveBook(@Param('book_id') book_id: string, @Req() req): Promise<void> {
     return await this.libraryService.archiveBookManually(book_id, req.user.user_id);
   }
 
-  @Delete('deleteBook/:libraryId/:bookId')
-  deleteBook(@Param('libraryId') libraryId: string, @Param('bookId') bookId: string) {
-    return this.libraryService.deleteBook(libraryId, bookId);
+  @UseGuards(JwtAuthGuard, LibraryRolesGuard)
+  @LibraryRoles(LibraryRole.SuperAdmin, LibraryRole.Admin)
+  @Put('updateAvailableUnits/:book_id/:increment')
+  async updateAvailableUnits(@Param('book_id') book_id: string, @Param('increment') increment: number, @Req() req): Promise<number> {
+    return await this.libraryService.updateAvailableUnitsManually(book_id, increment, req.user.user_id);
   }
 
-  @Get('bookUnits/:bookId')
-  getAvailableUnits(@Param('bookId') bookId: string) {
-    return this.libraryService.getAvailableUnits(bookId);
+  @UseGuards(JwtAuthGuard, LibraryRolesGuard)
+  @LibraryRoles(LibraryRole.SuperAdmin, LibraryRole.Admin)
+  @Put('updateBook')
+  async updateBook(@Body() dto: UpdateBookDto, @Req() req): Promise<Book> {
+    return await this.libraryService.updateBook(dto, req.user.user_id);
   }
-
-  @Put('updateUnits/:bookId/:increment')
-  updateAvailableUnits(@Param('bookId') bookId: string,@Param('increment') increment: string) {
-    return this.libraryService.updateAvailableUnits(bookId, Number(increment));
-  }
-
-  @Get('interestPercentage/:bookId')
-  getLibraryInterestByBookId(@Param('bookId') bookId: string) {
-    return this.libraryService.getLibraryInterestByBookId(bookId);
-  }
-
-  @Put('updateBook/:libraryId/:bookId')
-  updateBook(@Param('libraryId') libraryId: string, @Param('bookId') bookId: string, @Body() dto: UpdateBookDto) {
-  return this.libraryService.updateBook(libraryId, bookId, dto);
-  }
-
 
 
 }

@@ -5,6 +5,7 @@ import { AuthController } from './auth.controller';
 import { MembershipModule } from 'src/membership/membership.module';
 import { LibraryModule } from 'src/library/library.module';
 import { LibraryRolesGuard } from './guards/roles/library-roles.guard';
+import { JwtStrategy } from './guards/jwt/jwt.strategy';
 
 @Module({
   imports: [
@@ -17,7 +18,7 @@ import { LibraryRolesGuard } from './guards/roles/library-roles.guard';
     forwardRef(() => LibraryModule)
   ],
   controllers: [AuthController],
-  providers: [AuthService, LibraryRolesGuard],
+  providers: [AuthService, LibraryRolesGuard, JwtStrategy],
   exports:[AuthService]
 })
 export class AuthModule {}

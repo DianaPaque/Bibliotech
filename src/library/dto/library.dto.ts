@@ -14,6 +14,10 @@ export class CreateLibraryDto {
 }
 
 export class UpdateLibraryDto {
+  @IsNotEmpty()
+  @IsString()
+  libraryId: string;
+
   @IsOptional()
   @IsString()
   name?: string;
@@ -30,6 +34,10 @@ export class UpdateLibraryDto {
 export class CreateBookDto {
   @IsString()
   @IsNotEmpty()
+  libraryId: string;
+
+  @IsString()
+  @IsNotEmpty()
   book_name: string;
 
   @IsString()
@@ -37,7 +45,6 @@ export class CreateBookDto {
   book_description: string;
 
   @IsString()
-  @IsNotEmpty()
   isbn: string;
 
   @IsNumber()
@@ -51,6 +58,10 @@ export class CreateBookDto {
 }
 
 export class UpdateBookDto {
+  @IsNotEmpty()
+  @IsString()
+  bookId: string;
+
   @IsOptional()
   @IsString()
   book_name?: string;
