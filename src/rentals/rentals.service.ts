@@ -90,7 +90,7 @@ export class RentalService {
     if(new Types.ObjectId(requester_id) !== rental.customer_id) throw new UnauthorizedException('Solo el usuario registrado en la renta puede cancelarla');
     const today = new Date();
     if(this.isLate(rental.devolution_date, today)) throw new UnauthorizedException('No puede cancelar su renta si está retrazado en la entrega de la misma');
-    if(today === rental.devolution_date) throw new UnauthorizedException('No puede cancelar la renta el dia de entrega de la misma');\
+    if(today === rental.devolution_date) throw new UnauthorizedException('No puede cancelar la renta el dia de entrega de la misma');
     rental.isCancelled = true;
     rental.save();
   }
