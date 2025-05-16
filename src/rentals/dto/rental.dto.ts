@@ -5,13 +5,13 @@ export class CreateRentalDto {
   @IsNotEmpty()
   bookId: string;
 
-  @IsMongoId()
-  @IsNotEmpty()
-  customer_id: string;
-
   @IsDateString()
   @IsNotEmpty()
   devolution_date: string;
+
+  @IsNotEmpty()
+  @IsNumber()
+  amount: number;
 }
 
 export class UpdateRentalDto {

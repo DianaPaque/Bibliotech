@@ -43,6 +43,9 @@ export class Library {
 
   @Prop({ required: true })
   return_failure_interest: number;
+
+  @Prop({ type: Number, required: true})
+  flat_fee: number;
 }
 
 export type LibraryDocument = Library & Document;

@@ -11,6 +11,10 @@ export class CreateLibraryDto {
 
   @IsNumber()
   return_failure_interest: number;
+
+  @IsNotEmpty()
+  @IsNumber()
+  flat_fee: number;
 }
 
 export class UpdateLibraryDto {

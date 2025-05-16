@@ -15,8 +15,14 @@ export class Rental {
   @Prop({ type: Date, required: true })
   devolution_date: Date;
 
+  @Prop({ type: Number})
+  amount: number;
+
   @Prop({type: Boolean, default: false})
   isTurnedIn: Boolean;
+
+  @Prop({type: Boolean, default: false})
+  isCancelled: Boolean;
 
   @Prop({type: Date})
   actual_devolution_date: Date;
@@ -29,6 +35,9 @@ export class Rental {
 
   @Prop({ type: Number, default: 0 })
   price_with_interest: number;
+
+  @Prop({ type: Number, default: 0})
+  final_price: number;
 
   @Prop({ type: Number, default: 0 })
   price_no_interest: number;

@@ -7,7 +7,8 @@ import {
     IsPhoneNumber,
     IsEnum,
     MaxLength,
-    isEmail
+    isEmail,
+    IsLowercase
 } from 'class-validator';
 
 export enum UserRoles { 
@@ -49,6 +50,7 @@ export class CreateUserDto {
     second_last_name: string;
 
     @IsNotEmpty()
+    @IsLowercase()
     @IsEmail()
     email: string;
 
@@ -61,8 +63,9 @@ export class CreateUserDto {
     phone_number: string;
 }
 export class VerifyLoginOrRegisterDto {
-    @IsEmail()
     @IsNotEmpty()
+    @IsLowercase()
+    @IsEmail()
     email: string;
 
     @IsNotEmpty()
@@ -71,8 +74,9 @@ export class VerifyLoginOrRegisterDto {
     verif_code: string;
 }
 export class LoginDto {
-    @IsEmail()
     @IsNotEmpty()
+    @IsLowercase()
+    @IsEmail()
     email: string;
 
     @IsString()

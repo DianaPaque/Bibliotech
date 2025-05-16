@@ -16,6 +16,9 @@ export class User {
     @Prop({required: true})
     second_last_name: string;
 
+    @Prop({type: Number, default: 0})
+    strikes: number;
+
     @Prop({required: true, unique: true})
     email: string;
 

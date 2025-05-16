@@ -1,27 +1,32 @@
-import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model} from 'mongoose';
+import { Model, Types} from 'mongoose';
 import { Rental, RentalDocument } from './schema/rental.schema';
 import { CreateRentalDto, UpdateRentalDto } from './dto/rental.dto';
 import { LibraryService } from 'src/library/library.service';
-import { Cron, CronExpression } from '@nestjs/schedule';
-
+import { UsersService } from 'src/users/users.service';
+  
 @Injectable()
 export class RentalService {
   constructor(
-    //@InjectModel(Rental.name) private rentalModel: Model<RentalDocument>,
-    //private readonly libService: LibraryService,
-    //private readonly logger: Logger
+    @InjectModel(Rental.name) private rentalModel: Model<RentalDocument>,
+    private readonly libService: LibraryService,
+    private readonly usr: UsersService
   ) {}
-/*
-  async createRental(dto: CreateRentalDto): Promise<Rental> {
-    if(await this.libService.getAvailableUnits(dto.bookId) === 0) throw new BadRequestException(`There's no available unit for this book.`);
+
+  async createRental(dto: CreateRentalDto, requester_id: string): Promise<Rental> {
+    if(!requester_id) throw new BadRequestException('Falta el id del usuario');
+    const avail = await this.libService.getAvailableUnits(dto.bookId);
+    const balance = await this.usr.getUserBalance(requester_id);
+    if( balance <= 0 || balance <= await this.libService.getLibraryFlatFeeByBookId(dto.bookId)) throw new ForbiddenException('No tiene balance suficiente para pagar.');
+    if( avail === 0 || dto.amount > avail) throw new BadRequestException(`No hay suficientes unidades disponibles de este libro`);
     const rental = new this.rentalModel({
       ...dto,
+      customer_id: requester_id,
       start_date: new Date(),
     });
     const current_avail = await this.libService.getAvailableUnits(dto.bookId);
-    await this.libService.updateAvailableUnits(dto.bookId,(current_avail - 1));
+    await this.libService.updateAvailableUnits(dto.bookId,(current_avail - dto.amount));
     return rental.save();
   }
 
@@ -29,9 +34,42 @@ export class RentalService {
     return this.rentalModel.find().lean();
   }
 
+  async turnInRental(customer_id: string, book_id: string): Promise<Rental> {
+    if(!customer_id || !book_id) throw new BadRequestException('Faltan parámetros');
+    const rental = await this.rentalModel.findOne({customer_id: customer_id, bookId: book_id});
+    if(!rental) throw new NotFoundException('Renta no encontrada');
+    if(rental.isTurnedIn) throw new ConflictException('Esta renta ya fue entregada');
+    const today = new Date();
+    if(this.isLate(rental.devolution_date,today)){ 
+      const curr_strikes = await this.usr.getUserStrikes(customer_id);
+      await this.usr.setUserStrikes(customer_id,(curr_strikes + 1));
+    }
+
+    let flat_fee: number;
+    const specialCost = await this.libService.getSpecialCostByBookId(book_id);
+    if(specialCost !== 0) {
+      flat_fee = specialCost;
+    }
+    else{
+      flat_fee = await this.libService.getLibraryFlatFeeByBookId(book_id);
+    }
+    
+    if(await this.usr.getUserBalance(customer_id) <= 0) throw new ForbiddenException('No tiene balance suficiente para pagar');
+    const final_price = this.calculateLateFees(rental.devolution_date, today, await this.libService.getLibraryInterestByBookId(book_id), flat_fee);
+    rental.lateBy = this.lateBy(today, rental.devolution_date);
+    rental.actual_devolution_date = today;
+    rental.price_no_interest = flat_fee;
+    rental.price_with_interest = final_price;
+    rental.final_price = final_price;
+    rental.accumulated_interest = (final_price - flat_fee); 
+    rental.isTurnedIn = true;
+    await this.usr.setUserBalance(customer_id, (await this.usr.getUserBalance(customer_id) - final_price));
+    return await rental.save();
+  }
+
   async getRentalById(id: string): Promise<Rental> {
     const rental = await this.rentalModel.findById(id).lean();
-    if (!rental) throw new NotFoundException('Rental not found');
+    if (!rental) throw new NotFoundException('Renta no encontrada');
     return rental;
   }
 
@@ -41,45 +79,37 @@ export class RentalService {
       dto,
       { new: true }
     );
-    if (!updated) throw new NotFoundException('Rental not found');
+    if (!updated) throw new NotFoundException('Renta no encontrada');
     return updated;
   }
 
-  async deleteRental(requester_id: string, id: string): Promise<void> {
-    const auth = await this.rentalModel.findById(id);
-    if(!auth) throw new NotFoundException('Rental not found');
-    if(auth.customer_id.toString() !== requester_id) throw new UnauthorizedException('Only the user themselves can cancel a rental.'); 
-    const result = await this.rentalModel.findByIdAndDelete(id);
-    if (!result) throw new NotFoundException('Rental not found');
+  async cancelRental(requester_id: string, book_id: string): Promise<void> {
+    if(!requester_id || !book_id) throw new BadRequestException('Faltan parámetros')
+    const rental = await this.rentalModel.findOne({customer_id: requester_id, bookId: book_id});
+    if(!rental) throw new NotFoundException('Renta no encontrada');
+    if(new Types.ObjectId(requester_id) !== rental.customer_id) throw new UnauthorizedException('Solo el usuario registrado en la renta puede cancelarla');
+    const today = new Date();
+    if(this.isLate(rental.devolution_date, today)) throw new UnauthorizedException('No puede cancelar su renta si está retrazado en la entrega de la misma');
+    if(today === rental.devolution_date) throw new UnauthorizedException('No puede cancelar la renta el dia de entrega de la misma');\
+    rental.isCancelled = true;
+    rental.save();
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_1AM)
-  async applyLateFees() {
-    const now = new Date();
-    const overdueRentals = await this.rentalModel.find({
-      isTurnedIn: false,
-      devolution_date: { $lt: now },
-    });
-
-    for (const rental of overdueRentals) {
-      const overdueDays = Math.floor(
-        (now.getTime() - rental.devolution_date.getTime()) / (1000 * 60 * 60 * 24)
-      );
-
-      if (overdueDays > rental.lateBy) {
-        const newDaysLate = overdueDays - rental.lateBy;
-
-        const interestRate = await this.libService.getLibraryInterestByBookId(rental.bookId.toString());
-        const additionalInterest = rental.price_no_interest * interestRate * newDaysLate;
-
-        rental.lateBy = overdueDays;
-        rental.accumulated_interest += additionalInterest;
-        rental.price_with_interest = rental.price_no_interest + rental.accumulated_interest;
-
-        await rental.save();
-      }
+  calculateLateFees(deadline: Date, today: Date, interest_rate: number, og_payment: number): number {
+    if(this.isLate(deadline,today)){
+      const late_by = this.lateBy(today,deadline);
+      return parseFloat((og_payment * Math.pow(1+(interest_rate/100),late_by)).toFixed(2));
     }
+    return og_payment;
   }
 
-*/
+  isLate(deadline: Date, today: Date): boolean{
+    return today > deadline;
+  }
+
+  lateBy(today: Date, deadline: Date): number {
+    return Math.floor((today.getTime() - deadline.getTime())/86400000);
+  }
+
+
 }

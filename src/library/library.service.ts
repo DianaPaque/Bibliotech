@@ -197,4 +197,24 @@ export class LibraryService {
     return true;
   }
 
+  async getLibraryFlatFeeByBookId(book_id: string): Promise<number> {
+    const library_id = await this.getLibraryIdByBookId(book_id);
+    const library = await this.libraryModel.findById(new Types.ObjectId(library_id));
+    if(!library) throw new NotFoundException('Biblioteca no encontrada');
+    return library.flat_fee;
+  }
+
+  async getSpecialCostByBookId(book_id: string): Promise<number> {
+    const lib = await this.libraryModel.findOne(
+      { 'Books.book_id': new Types.ObjectId(book_id) },
+      { 'Books.$': 1 }
+    ).lean();
+
+    if (!lib || !lib.Books || lib.Books.length === 0)
+      throw new NotFoundException('Libro no encontrado');
+
+    return lib.Books[0].specialCost;
+  }
+
+
 }

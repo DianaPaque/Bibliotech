@@ -1,7 +1,7 @@
 import { ConflictException, Injectable, NotFoundException, OnModuleInit, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel, Schema } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { User as SchemaUser, User, UserDocument} from './schema/users.schema';
 import { CreateUserDto, SanitizedUser, VerifyLoginOrRegisterDto, LoginDto } from './dto/users.dto';
 import { NotificationsService } from 'src/notifications/notifications.service';
@@ -60,5 +60,31 @@ export class UsersService{
         const exists = await this.userModel.findById(user_id);
         if(!exists) return false;
         return true;
+    }
+
+    async getUserBalance(user_id: string): Promise<number> {
+        const user = await this.userModel.findById(new Types.ObjectId(user_id));
+        if(!user) throw new NotFoundException('[getUserBalance] Usuario no encontrado');
+        return user.balance;
+    }
+
+    async setUserBalance(user_id: string, new_balance: number): Promise<void> {
+        const user = await this.userModel.findById(new Types.ObjectId(user_id));
+        if(!user) throw new NotFoundException('[setUserBalance] Usuario no encontrado');
+        user.balance = new_balance;
+        user.save();
+    }
+
+    async getUserStrikes(user_id: string): Promise<number> {
+        const user = await this.userModel.findById(new Types.ObjectId(user_id));
+        if(!user) throw new NotFoundException('[getUserStrikes] Usuario no encontrado');
+        return user.strikes;
+    }
+
+    async setUserStrikes(user_id: string, strikes: number): Promise<void> {
+        const user = await this.userModel.findById(new Types.ObjectId(user_id));
+        if(!user) throw new NotFoundException('[setUserStrikes] Usuario no encontrado');
+        user.strikes = strikes;
+        user.save();
     }
 }

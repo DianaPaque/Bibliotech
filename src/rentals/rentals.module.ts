@@ -5,9 +5,10 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Rental, RentalSchema } from './schema/rental.schema';
 import { LibraryService } from 'src/library/library.service';
 import { LibraryModule } from 'src/library/library.module';
+import { UsersModule } from 'src/users/users.module';
 
 @Module({
-  imports: [MongooseModule.forFeature([{name: Rental.name, schema: RentalSchema}]), LibraryModule],
+  imports: [MongooseModule.forFeature([{name: Rental.name, schema: RentalSchema}]), LibraryModule, UsersModule],
   controllers: [RentalsController],
   providers: [RentalService],
 })
