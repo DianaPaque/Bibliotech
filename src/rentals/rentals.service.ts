@@ -1,18 +1,25 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, OnModuleInit, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types} from 'mongoose';
 import { Rental, RentalDocument } from './schema/rental.schema';
 import { AcceptTurnInDto, CreateRentalDto, RequestTurnInDto, UpdateRentalDto } from './dto/rental.dto';
 import { LibraryService } from 'src/library/library.service';
 import { UsersService } from 'src/users/users.service';
+import { NotificationsService } from 'src/notifications/notifications.service';
+import { Cron, CronExpression } from '@nestjs/schedule';
   
 @Injectable()
-export class RentalService {
+export class RentalService implements OnModuleInit{
   constructor(
     @InjectModel(Rental.name) private rentalModel: Model<RentalDocument>,
     private readonly libService: LibraryService,
-    private readonly usr: UsersService
+    private readonly usr: UsersService,
+    private readonly notif: NotificationsService
   ) {}
+
+  onModuleInit() {
+    this.sendRelevantRentNotifs();
+  }
 
   async createRental(dto: CreateRentalDto, requester_id: string): Promise<Rental> {
     if(!requester_id) throw new BadRequestException('Falta el id del usuario');
@@ -102,6 +109,48 @@ export class RentalService {
     rental.save();
   }
 
+
+  @Cron(CronExpression.EVERY_10_MINUTES)
+  async sendRelevantRentNotifs(): Promise<void> {
+    console.log('[RentalNotifier Active]')
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(now.getDate() + 1);
+
+    const rentals = await this.rentalModel.find({ isTurnedIn: false }).lean();
+    if (!rentals || rentals.length === 0) return;
+
+    for (const rental of rentals) {
+      try {
+        const dueDate = new Date(rental.devolution_date);
+        const userEmail = await this.usr.getUserEmailById(rental.customer_id.toString());
+        const book = await this.libService.getBookById(rental.bookId.toString());
+        console.log('Sending email to: ',userEmail,' about book: ',book.book_name,' ',book.book_id);
+        let subject = '';
+        let text = '';
+
+        if (dueDate < now) {
+          subject = '¡Estás atrasado con un libro!';
+          text = `Este es un recordatorio automático para avisarte que estás retrasado en la devolución del libro "${book.book_name}". Devuélvelo cuanto antes para evitar más cargos por intereses.`;
+        } else if (
+          dueDate.getFullYear() === tomorrow.getFullYear() &&
+          dueDate.getMonth() === tomorrow.getMonth() &&
+          dueDate.getDate() === tomorrow.getDate()
+        ) {
+          subject = 'Recordatorio: pronto vence tu renta';
+          text = `Recuerda que el libro "${book.book_name}" debe ser devuelto mañana. Evita multas y retrasos devolviéndolo a tiempo.`;
+        } else {
+          continue; 
+        }
+
+        await this.notif.sendGenericEmail(userEmail, subject, text);
+      } catch (err) {
+        console.warn(`Error al notificar al usuario ${rental.customer_id}: ${err.message}`);
+      }
+    }
+  }
+
+
   calculateLateFees(deadline: Date, today: Date, interest_rate: number, og_payment: number): number {
     if(this.isLate(deadline,today)){
       const late_by = this.lateBy(today,deadline);
@@ -110,7 +159,7 @@ export class RentalService {
     return og_payment;
   }
 
-  isLate(deadline: Date, today: Date): boolean{
+  isLate(deadline: Date, today: Date): boolean {
     return today > deadline;
   }
 

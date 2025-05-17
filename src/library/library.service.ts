@@ -216,5 +216,18 @@ export class LibraryService {
     return lib.Books[0].specialCost;
   }
 
+  async getBookById(bookId: string): Promise<Book> {
+    const lib = await this.libraryModel.findOne(
+      { 'Books.book_id': new Types.ObjectId(bookId) },
+      { 'Books.$': 1 }
+    ).lean();
+
+    if (!lib || !lib.Books || lib.Books.length === 0)
+      throw new NotFoundException('Libro no encontrado');
+
+    return lib.Books[0];
+  } 
+
+
 
 }

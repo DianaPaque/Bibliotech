@@ -87,4 +87,10 @@ export class UsersService{
         user.strikes = strikes;
         user.save();
     }
+
+    async getUserEmailById(user_id: string): Promise<string> {
+        const user = await this.userModel.findById(user_id);
+        if(!user) throw new NotFoundException('[getUserEmailById] Usuario no encontrado');
+        return user.email;
+    }
 }
