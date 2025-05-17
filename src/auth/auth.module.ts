@@ -6,19 +6,24 @@ import { MembershipModule } from 'src/membership/membership.module';
 import { LibraryModule } from 'src/library/library.module';
 import { LibraryRolesGuard } from './guards/roles/library-roles.guard';
 import { JwtStrategy } from './guards/jwt/jwt.strategy';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'default_secret',
-      signOptions: { expiresIn: '1d' },
+    ConfigModule,
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: { expiresIn: '1d' },
+      }),
+      inject: [ConfigService],
     }),
-
-    forwardRef( () => MembershipModule ),
+    forwardRef(() => MembershipModule),
     forwardRef(() => LibraryModule)
   ],
   controllers: [AuthController],
   providers: [AuthService, LibraryRolesGuard, JwtStrategy],
-  exports:[AuthService]
+  exports: [AuthService, JwtModule]
 })
 export class AuthModule {}

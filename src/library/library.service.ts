@@ -168,7 +168,11 @@ export class LibraryService {
 
   async getOwnerIdByLibraryId(libraryId: string): Promise<string> {
     const lib = await this.libraryModel.findById(libraryId, { owner_id: 1 }).lean();
-    if (!lib) throw new Error('Library not found');
+
+    if (!lib || !lib.owner_id) {
+      throw new Error(`Library with ID ${libraryId} not found or missing owner_id`);
+    }
+
     return lib.owner_id.toString();
   }
 
