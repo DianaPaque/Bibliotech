@@ -29,29 +29,30 @@ export class LibraryRolesGuard implements CanActivate {
     const req = context.switchToHttp().getRequest();
     const user = req.user;
 
-    if (!user) throw new ForbiddenException('User not authenticated');
+    if (!user) throw new ForbiddenException('Usuario no autenticado');
 
-    // Intenta obtener el libraryId directamente
     let libraryId =
       req.body?.libraryId ||
       req.body?.library_id ||
       req.params?.libraryId ||
+      req.params?.library_id ||
       req.query?.libraryId;
 
-    // Si no se encontró pero hay book_id, usarlo para derivar el libraryId
     if (!libraryId && req.params?.book_id) {
       libraryId = await this.libService.getLibraryIdByBookId(req.params.book_id);
     }
 
-    if (!libraryId)
-      throw new ForbiddenException('No se pudo determinar la biblioteca');
 
-    //const ownerId = await this.libService.getOwnerIdByLibraryId(libraryId);
-    if (libraryId === user.user_id) return true;
+    if (!libraryId) throw new ForbiddenException('Falta el ID de la biblioteca');
 
-    const isAllowed = await this.membService.hasRole(user.user_id, libraryId, requiredRoles);
-    if (!isAllowed) {
-      throw new ForbiddenException(`User lacks required role: ${requiredRoles.join(', ')}`);
+    const ownerId = await this.libService.getOwnerIdByLibraryId(libraryId);
+
+    if (user.user_id.toString() === ownerId.toString()) return true;
+
+    const role = await this.membService.getRole(user.user_id, libraryId);
+
+    if (!role || !requiredRoles.includes(role)) {
+      throw new ForbiddenException('No tienes los permisos requeridos');
     }
 
     return true;

@@ -1,4 +1,4 @@
-import { forwardRef, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { UserMembership, UserMembershipDocument, UserMembershipSchema } from './schema/user-membership.schema';
 import { Model, Types } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
@@ -27,9 +27,12 @@ export class MembershipService {
     }
 
     async getRole(user_id: string, library_id: string): Promise<LibraryRole | null> {
-        const membership = await this.membModel.findOne({ user_id, library_id }).lean();
-        return membership?.role ?? null;
-    }
+        const usr = new Types.ObjectId(user_id);
+        const lib = new Types.ObjectId(library_id);
+        const membership = await this.membModel.findOne({ user_id: usr, library_id: lib }).lean();
+        return membership ? membership.role : null;
+    }   
+
 
     async hasRole(user_id: string, library_id: string, roles: LibraryRole[]): Promise<boolean> {
         const role = await this.getRole(user_id, library_id);
@@ -37,6 +40,7 @@ export class MembershipService {
     }
 
     async getAllLibraryMemberships(library_id: string): Promise<(UserMembership & { isOwner: boolean })[]> {
+        if(!library_id) throw new BadRequestException('Faltan parametros');
         const ownerId = await this.lib.getOwnerIdByLibraryId(library_id);
 
         const memberships = await this.membModel.find({

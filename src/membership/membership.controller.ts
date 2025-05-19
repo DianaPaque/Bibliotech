@@ -13,7 +13,7 @@ export class MembershipController {
 
     @UseGuards(JwtAuthGuard, LibraryRolesGuard)
     @LibraryRoles(LibraryRole.SuperAdmin)
-    @Get('getAllLibraryMemberships/:library_id')
+    @Post('getAllLibraryMemberships/:library_id')
     async getAllLibraryMemberships(@Param('library_id')library_id: string): Promise<(UserMembership & { isOwner: boolean })[]> {
       return await this.membershipService.getAllLibraryMemberships(library_id);
     }
