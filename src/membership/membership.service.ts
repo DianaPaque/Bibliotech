@@ -36,7 +36,7 @@ export class MembershipService {
         return role ? roles.includes(role) : false;
     }
 
-   async getAllLibraryMemberships(library_id: string): Promise<(UserMembership & { isOwner: boolean })[]> {
+    async getAllLibraryMemberships(library_id: string): Promise<(UserMembership & { isOwner: boolean })[]> {
         const ownerId = await this.lib.getOwnerIdByLibraryId(library_id);
 
         const memberships = await this.membModel.find({

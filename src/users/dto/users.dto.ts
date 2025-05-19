@@ -58,6 +58,10 @@ export class CreateUserDto {
     @IsString()
     password: string;
 
+    @IsEnum(UserRoles)
+    @IsOptional()
+    role?: UserRoles = UserRoles.Customer;
+
     @IsPhoneNumber()
     @IsNotEmpty()
     phone_number: string;

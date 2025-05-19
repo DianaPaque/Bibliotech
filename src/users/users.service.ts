@@ -26,6 +26,7 @@ export class UsersService{
             phone_number: dto.phone_number,
             pwd_hash: hashed_pwd,
             verificationCode: verif_code,
+            role: dto.role || 'Customer'
         });
         await this.notifier.sendEmailVerifCode(dto.email,verif_code);
 
@@ -52,7 +53,7 @@ export class UsersService{
         const passwordMatch = await this.auth.comparePwd(dto.password, user.pwd_hash);
         if (!passwordMatch) throw new UnauthorizedException('Contraseña incorrecta');
 
-        const token = await this.auth.generateJwt({ sub: user._id, email: user.email, role: 'Customer' });
+        const token = await this.auth.generateJwt({ sub: user._id, email: user.email, role: user.role });
         return { token };
     }
 

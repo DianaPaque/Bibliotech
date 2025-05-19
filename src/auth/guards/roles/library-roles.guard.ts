@@ -34,6 +34,7 @@ export class LibraryRolesGuard implements CanActivate {
     // Intenta obtener el libraryId directamente
     let libraryId =
       req.body?.libraryId ||
+      req.body?.library_id ||
       req.params?.libraryId ||
       req.query?.libraryId;
 
@@ -45,8 +46,8 @@ export class LibraryRolesGuard implements CanActivate {
     if (!libraryId)
       throw new ForbiddenException('No se pudo determinar la biblioteca');
 
-    const ownerId = await this.libService.getOwnerIdByLibraryId(libraryId);
-    if (ownerId === user.user_id) return true;
+    //const ownerId = await this.libService.getOwnerIdByLibraryId(libraryId);
+    if (libraryId === user.user_id) return true;
 
     const isAllowed = await this.membService.hasRole(user.user_id, libraryId, requiredRoles);
     if (!isAllowed) {
