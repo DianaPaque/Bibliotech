@@ -25,7 +25,7 @@ export class RentalService implements OnModuleInit{
     if(!requester_id) throw new BadRequestException('Falta el id del usuario');
     const avail = await this.libService.getAvailableUnits(dto.bookId);
     const balance = await this.usr.getUserBalance(requester_id);
-    if( balance <= 0 || balance <= await this.libService.getLibraryFlatFeeByBookId(dto.bookId)) throw new ForbiddenException('No tiene balance suficiente para pagar.');
+    //if( balance <= 0 || balance <= await this.libService.getLibraryFlatFeeByBookId(dto.bookId)) throw new ForbiddenException('No tiene balance suficiente para pagar.');
     if( avail === 0 || dto.amount > avail) throw new BadRequestException(`No hay suficientes unidades disponibles de este libro`);
     const rental = new this.rentalModel({
       ...dto,
@@ -101,7 +101,7 @@ export class RentalService implements OnModuleInit{
     if(!requester_id || !book_id) throw new BadRequestException('Faltan parámetros')
     const rental = await this.rentalModel.findOne({customer_id: requester_id, bookId: book_id});
     if(!rental) throw new NotFoundException('Renta no encontrada');
-    if(new Types.ObjectId(requester_id) !== rental.customer_id) throw new UnauthorizedException('Solo el usuario registrado en la renta puede cancelarla');
+    if(requester_id !== rental.customer_id.toString()) throw new UnauthorizedException('Solo el usuario registrado en la renta puede cancelarla');
     const today = new Date();
     if(this.isLate(rental.devolution_date, today)) throw new UnauthorizedException('No puede cancelar su renta si está retrazado en la entrega de la misma');
     if(today === rental.devolution_date) throw new UnauthorizedException('No puede cancelar la renta el dia de entrega de la misma');
@@ -142,7 +142,6 @@ export class RentalService implements OnModuleInit{
         } else {
           continue; 
         }
-
         await this.notif.sendGenericEmail(userEmail, subject, text);
       } catch (err) {
         console.warn(`Error al notificar al usuario ${rental.customer_id}: ${err.message}`);

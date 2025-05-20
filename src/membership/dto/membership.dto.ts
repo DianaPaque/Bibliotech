@@ -14,3 +14,14 @@ export class CreateOrModifyMembershipDto {
     @IsEnum(LibraryRole, {message: 'Rol inválido'})
     role: LibraryRole;
 }
+
+
+export class DeleteMembershipDto {
+    @IsNotEmpty()
+    @IsString()
+    user_id: string;
+
+    @IsNotEmpty()
+    @IsString()
+    library_id: string;
+}

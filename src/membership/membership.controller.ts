@@ -5,7 +5,7 @@ import { LibraryRolesGuard } from 'src/auth/guards/roles/library-roles.guard';
 import { LibraryRoles } from 'src/auth/guards/roles/library-roles.decorator';
 import { LibraryRole } from 'src/auth/guards/roles/library-roles.enum';
 import { UserMembership } from './schema/user-membership.schema';
-import { CreateOrModifyMembershipDto } from './dto/membership.dto';
+import { CreateOrModifyMembershipDto, DeleteMembershipDto } from './dto/membership.dto';
 
 @Controller('membership')
 export class MembershipController {
@@ -13,7 +13,7 @@ export class MembershipController {
 
     @UseGuards(JwtAuthGuard, LibraryRolesGuard)
     @LibraryRoles(LibraryRole.SuperAdmin)
-    @Post('getAllLibraryMemberships/:library_id')
+    @Get('getAllLibraryMemberships/:library_id')
     async getAllLibraryMemberships(@Param('library_id')library_id: string): Promise<(UserMembership & { isOwner: boolean })[]> {
       return await this.membershipService.getAllLibraryMemberships(library_id);
     }
@@ -25,18 +25,20 @@ export class MembershipController {
       return await this.membershipService.createMembership(dto);
     }
 
-    @UseGuards(JwtAuthGuard, LibraryRolesGuard)
-    @LibraryRoles(LibraryRole.SuperAdmin)
+    @UseGuards(JwtAuthGuard)
+    //@LibraryRoles(LibraryRole.SuperAdmin)
     @Put('modifyMembership')
     async modifyMembership(@Body() dto: CreateOrModifyMembershipDto, @Req() req): Promise<UserMembership | null> {
       return await this.membershipService.modifyMembership(req.user.user_id, dto);
     }
 
-  @UseGuards(JwtAuthGuard, LibraryRolesGuard)
-  @LibraryRoles(LibraryRole.SuperAdmin)
-  @Delete('deleteMembership')
-  async deleteMembership(@Body() dto: CreateOrModifyMembershipDto, @Req() req): Promise<void> {
-    return await this.membershipService.deleteMembership(req.user.user_id,dto);
-  }
+    @UseGuards(JwtAuthGuard, LibraryRolesGuard)
+    @LibraryRoles(LibraryRole.SuperAdmin)
+    @Delete('deleteMembership')
+    async deleteMembership(@Body() dto: DeleteMembershipDto, @Req() req): Promise<void> {
+      return await this.membershipService.deleteMembership(req.user.user_id, dto);
+    }
+
+
 
 }

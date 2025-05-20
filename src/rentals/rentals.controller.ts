@@ -19,7 +19,7 @@ export class RentalsController {
 
   @UseGuards(JwtAuthGuard)
   @Put('requestTurnIn')
-  async requestTurnIn(@Req() req, dto: RequestTurnInDto): Promise<void> {
+  async requestTurnIn(@Req() req, @Body() dto: RequestTurnInDto): Promise<void> {
     await this.rentalsService.requestTurnIn(req.user.user_id, dto);
   }
 

@@ -16,7 +16,7 @@ export class LibraryService {
   async createLibrary(dto: CreateLibraryDto, requester_id: string): Promise<Library> {
     const created = new this.libraryModel({
       ...dto,
-      owner_id: requester_id
+      owner_id: new Types.ObjectId(requester_id)
     });
     return created.save();
   }
@@ -167,7 +167,7 @@ export class LibraryService {
   }
 
   async getOwnerIdByLibraryId(libraryId: string): Promise<string> {
-    const lib = await this.libraryModel.findById(libraryId, { owner_id: 1 }).lean();
+    const lib = await this.libraryModel.findById(new Types.ObjectId(libraryId), { owner_id: 1 }).lean();
 
     if (!lib || !lib.owner_id) {
       throw new Error(`Library with ID ${libraryId} not found or missing owner_id`);

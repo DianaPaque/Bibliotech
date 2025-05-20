@@ -3,7 +3,7 @@ import { UserMembership, UserMembershipDocument, UserMembershipSchema } from './
 import { Model, Types } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { LibraryRole } from 'src/auth/guards/roles/library-roles.enum';
-import { CreateOrModifyMembershipDto } from './dto/membership.dto';
+import { CreateOrModifyMembershipDto, DeleteMembershipDto } from './dto/membership.dto';
 import { LibraryService } from 'src/library/library.service';
 import { UsersService } from 'src/users/users.service';
 
@@ -78,18 +78,17 @@ export class MembershipService {
         return updated;
     }
 
-    async deleteMembership(requester_id: string, dto: CreateOrModifyMembershipDto): Promise<void> {
+    async deleteMembership(requester_id: string, dto: DeleteMembershipDto): Promise<void> {
         if(requester_id === dto.user_id) throw new UnauthorizedException('No puede eliminar su propia membresía');
-        const requester_role = await this.getRole(requester_id, dto.library_id);
-        if(!requester_role) throw new NotFoundException('Rol no encontrado para usuario solicitante');
-        const target_role = await this.getRole(dto.user_id, dto.library_id);
-        if(!target_role) throw new NotFoundException('Rol no encontrado para usuario a eliminar');
-        if(LibraryRoleHierarchy[requester_role] <= LibraryRoleHierarchy[target_role]) throw new UnauthorizedException('No puede eliminar usuarios con rol igual o superior al suyo');
-        const result = await this.membModel.findOneAndDelete({
-            user_id: new Types.ObjectId(dto.user_id),
-            library_id: new Types.ObjectId(dto.library_id)
-        });
-        if(!result) throw new NotFoundException('Membresía no encontrada');
+        //const requester_role = await this.getRole(requester_id, dto.library_id);
+        //const lib_owner = await this.lib.getOwnerIdByLibraryId(dto.library_id);
+        //if(requester_role === null) return 
+        //if(!requester_role && (lib_owner != requester_id)) throw new NotFoundException('Rol no encontrado para usuario solicitante');
+        //const target_role = await this.getRole(dto.user_id, dto.library_id);
+        //if(!target_role) throw new NotFoundException('Rol no encontrado para usuario a eliminar');
+        //if(LibraryRoleHierarchy[requester_role] <= LibraryRoleHierarchy[target_role]) throw new UnauthorizedException('No puede eliminar usuarios con rol igual o superior al suyo');
+        console.log("Si llegué hasta acá")
+        console.log(await this.membModel.findOneAndDelete({user_id: dto.user_id, library_id: dto.library_id}));
     }
 
 

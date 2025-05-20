@@ -1,4 +1,4 @@
-import { IsDateString, IsMongoId, IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
+import { IsDateString, IsMongoId, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateRentalDto {
   @IsMongoId()
@@ -30,7 +30,7 @@ export class AcceptTurnInDto {
 
 export class RequestTurnInDto {
   @IsNotEmpty()
-  @IsMongoId()
+  @IsString()
   bookId: string;
 }
 
